@@ -237,3 +237,13 @@ type CommitLog struct {
 	Owners       []string      `json:"owners" gorm:"-"`
 	CDate        time.Time     `json:"cdate" gorm:"type:timestamp with time zone;not null;default:clock_timestamp()"`
 }
+
+type NotificationSubscription struct {
+	VendorID     string         `json:"vendorID" gorm:"primaryKey;type:text"`
+	Owner        string         `json:"owner" gorm:"primaryKey;type:text"`
+	Schemas      pq.StringArray `json:"schemas" gorm:"type:text[]"`
+	Timelines    pq.StringArray `json:"timelines" gorm:"type:text[]"`
+	Subscription string         `json:"subscription" gorm:"type:text"`
+	CDate        time.Time      `json:"cdate" gorm:"type:timestamp with time zone;not null;default:clock_timestamp()"`
+	MDate        time.Time      `json:"mdate" gorm:"autoUpdateTime"`
+}
