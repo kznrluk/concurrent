@@ -37,14 +37,12 @@ type Worker struct {
 }
 
 func (r *reactor) Start(ctx context.Context) {
-	slog.Info("starting reactor")
 
 	ticker10 := time.NewTicker(10 * time.Second)
 	workers := make(map[string]Worker)
 
 	go func() {
 		for ; true; <-ticker10.C {
-			slog.Info("checking subscriptions")
 
 			subscriptions, err := r.service.GetAllSubscriptions(ctx)
 			if err != nil {
@@ -58,15 +56,12 @@ func (r *reactor) Start(ctx context.Context) {
 				existingWorker, ok := workers[subID]
 				if ok {
 					if existingWorker.MDate == sub.MDate {
-						slog.Info("worker already running", slog.String("vendorID", sub.VendorID), slog.String("owner", sub.Owner))
 						continue
 					} else {
 						existingWorker.Routine()
 						delete(workers, subID)
 					}
 				}
-
-				slog.Info("starting worker", slog.String("vendorID", sub.VendorID), slog.String("owner", sub.Owner))
 
 				workerctx, cancel := context.WithCancel(ctx)
 				workers[subID] = Worker{
@@ -104,7 +99,6 @@ func (r *reactor) Start(ctx context.Context) {
 							}
 
 							if !slices.Contains(sub.Schemas, doc.Schema) {
-								slog.Info("schema not in subscription", slog.String("schema", doc.Schema))
 								continue
 							}
 
@@ -116,19 +110,21 @@ func (r *reactor) Start(ctx context.Context) {
 							}
 							defer resp.Body.Close()
 
-							body, err := io.ReadAll(resp.Body)
-							if err != nil {
-								slog.Error("error reading response body", slog.String("error", err.Error()))
-								continue
-							}
+							if resp.StatusCode != 201 {
+								body, err := io.ReadAll(resp.Body)
+								if err != nil {
+									slog.Error("error reading response body", slog.String("error", err.Error()))
+									continue
+								}
 
-							slog.Info("notification sent",
-								slog.String("vendorID", sub.VendorID),
-								slog.String("owner", sub.Owner),
-								slog.String("schema", doc.Schema),
-								slog.String("status", resp.Status),
-								slog.String("body", string(body)),
-							)
+								slog.Error("notification failed",
+									slog.String("vendorID", sub.VendorID),
+									slog.String("owner", sub.Owner),
+									slog.String("schema", doc.Schema),
+									slog.String("status", resp.Status),
+									slog.String("body", string(body)),
+								)
+							}
 						}
 					}
 				}(workerctx, sub)
