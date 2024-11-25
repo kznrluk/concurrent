@@ -267,8 +267,10 @@ func main() {
 	jobReactor := job.NewReactor(storeService, jobService)
 
 	webpushOpts := webpush.Options{
+		Subscriber:      config.Concrnt.FQDN,
 		VAPIDPublicKey:  config.Server.VapidPublicKey,
 		VAPIDPrivateKey: config.Server.VapidPrivateKey,
+		TTL:             60,
 	}
 
 	notificationService := concurrent.SetupNotificationService(db)
