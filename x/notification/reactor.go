@@ -3,6 +3,7 @@ package notification
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"log/slog"
 	"slices"
 	"time"
@@ -114,6 +115,20 @@ func (r *reactor) Start(ctx context.Context) {
 								continue
 							}
 							defer resp.Body.Close()
+
+							body, err := io.ReadAll(resp.Body)
+							if err != nil {
+								slog.Error("error reading response body", slog.String("error", err.Error()))
+								continue
+							}
+
+							slog.Info("notification sent",
+								slog.String("vendorID", sub.VendorID),
+								slog.String("owner", sub.Owner),
+								slog.String("schema", doc.Schema),
+								slog.String("status", resp.Status),
+								slog.String("body", string(body)),
+							)
 						}
 					}
 				}(workerctx, sub)
