@@ -380,6 +380,20 @@ func (mr *MockAuthServiceMockRecorder) IssuePassport(ctx, requester, key any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssuePassport", reflect.TypeOf((*MockAuthService)(nil).IssuePassport), ctx, requester, key)
 }
 
+// RateLimiter mocks base method.
+func (m *MockAuthService) RateLimiter(configMap core.RateLimitConfigMap) echo.MiddlewareFunc {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RateLimiter", configMap)
+	ret0, _ := ret[0].(echo.MiddlewareFunc)
+	return ret0
+}
+
+// RateLimiter indicates an expected call of RateLimiter.
+func (mr *MockAuthServiceMockRecorder) RateLimiter(configMap any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RateLimiter", reflect.TypeOf((*MockAuthService)(nil).RateLimiter), configMap)
+}
+
 // MockDomainService is a mock of DomainService interface.
 type MockDomainService struct {
 	ctrl     *gomock.Controller
@@ -1042,18 +1056,32 @@ func (m *MockPolicyService) EXPECT() *MockPolicyServiceMockRecorder {
 	return m.recorder
 }
 
-// Summerize mocks base method.
-func (m *MockPolicyService) Summerize(results []core.PolicyEvalResult, action string) bool {
+// AccumulateOr mocks base method.
+func (m *MockPolicyService) AccumulateOr(results []core.PolicyEvalResult, action string, override *map[string]bool) core.PolicyEvalResult {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Summerize", results, action)
+	ret := m.ctrl.Call(m, "AccumulateOr", results, action, override)
+	ret0, _ := ret[0].(core.PolicyEvalResult)
+	return ret0
+}
+
+// AccumulateOr indicates an expected call of AccumulateOr.
+func (mr *MockPolicyServiceMockRecorder) AccumulateOr(results, action, override any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccumulateOr", reflect.TypeOf((*MockPolicyService)(nil).AccumulateOr), results, action, override)
+}
+
+// Summerize mocks base method.
+func (m *MockPolicyService) Summerize(results []core.PolicyEvalResult, action string, overrides *map[string]bool) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Summerize", results, action, overrides)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // Summerize indicates an expected call of Summerize.
-func (mr *MockPolicyServiceMockRecorder) Summerize(results, action any) *gomock.Call {
+func (mr *MockPolicyServiceMockRecorder) Summerize(results, action, overrides any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Summerize", reflect.TypeOf((*MockPolicyService)(nil).Summerize), results, action)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Summerize", reflect.TypeOf((*MockPolicyService)(nil).Summerize), results, action, overrides)
 }
 
 // Test mocks base method.
@@ -2222,4 +2250,57 @@ func (m *MockJobService) List(ctx context.Context, requester string) ([]core.Job
 func (mr *MockJobServiceMockRecorder) List(ctx, requester any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockJobService)(nil).List), ctx, requester)
+}
+
+// MockNotificationService is a mock of NotificationService interface.
+type MockNotificationService struct {
+	ctrl     *gomock.Controller
+	recorder *MockNotificationServiceMockRecorder
+}
+
+// MockNotificationServiceMockRecorder is the mock recorder for MockNotificationService.
+type MockNotificationServiceMockRecorder struct {
+	mock *MockNotificationService
+}
+
+// NewMockNotificationService creates a new mock instance.
+func NewMockNotificationService(ctrl *gomock.Controller) *MockNotificationService {
+	mock := &MockNotificationService{ctrl: ctrl}
+	mock.recorder = &MockNotificationServiceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockNotificationService) EXPECT() *MockNotificationServiceMockRecorder {
+	return m.recorder
+}
+
+// GetAllSubscriptions mocks base method.
+func (m *MockNotificationService) GetAllSubscriptions(ctx context.Context) ([]core.NotificationSubscription, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllSubscriptions", ctx)
+	ret0, _ := ret[0].([]core.NotificationSubscription)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllSubscriptions indicates an expected call of GetAllSubscriptions.
+func (mr *MockNotificationServiceMockRecorder) GetAllSubscriptions(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllSubscriptions", reflect.TypeOf((*MockNotificationService)(nil).GetAllSubscriptions), ctx)
+}
+
+// Subscribe mocks base method.
+func (m *MockNotificationService) Subscribe(ctx context.Context, notification core.NotificationSubscription) (core.NotificationSubscription, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Subscribe", ctx, notification)
+	ret0, _ := ret[0].(core.NotificationSubscription)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Subscribe indicates an expected call of Subscribe.
+func (mr *MockNotificationServiceMockRecorder) Subscribe(ctx, notification any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockNotificationService)(nil).Subscribe), ctx, notification)
 }

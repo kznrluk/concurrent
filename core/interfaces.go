@@ -38,6 +38,7 @@ type AssociationService interface {
 type AuthService interface {
 	IssuePassport(ctx context.Context, requester string, key []Key) (string, error)
 	IdentifyIdentity(next echo.HandlerFunc) echo.HandlerFunc
+	RateLimiter(configMap RateLimitConfigMap) echo.MiddlewareFunc
 }
 
 type DomainService interface {
@@ -94,7 +95,8 @@ type PolicyService interface {
 	Test(ctx context.Context, policy Policy, context RequestContext, action string) (PolicyEvalResult, error)
 	TestWithPolicyURL(ctx context.Context, url string, context RequestContext, action string) (PolicyEvalResult, error)
 	TestWithGlobalPolicy(ctx context.Context, context RequestContext, action string) (PolicyEvalResult, error)
-	Summerize(results []PolicyEvalResult, action string) bool
+	Summerize(results []PolicyEvalResult, action string, overrides *map[string]bool) bool
+	AccumulateOr(results []PolicyEvalResult, action string, override *map[string]bool) PolicyEvalResult
 }
 
 type ProfileService interface {
@@ -197,4 +199,11 @@ type JobService interface {
 	Dequeue(ctx context.Context) (*Job, error)
 	Complete(ctx context.Context, id, status, result string) (Job, error)
 	Cancel(ctx context.Context, id string) (Job, error)
+}
+
+type NotificationService interface {
+	Subscribe(ctx context.Context, notification NotificationSubscription) (NotificationSubscription, error)
+	GetAllSubscriptions(ctx context.Context) ([]NotificationSubscription, error)
+	Delete(ctx context.Context, vendorID, owner string) error
+	Get(ctx context.Context, vendorID, owner string) (NotificationSubscription, error)
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/totegamma/concurrent/x/jwt"
 	"github.com/totegamma/concurrent/x/key"
 	"github.com/totegamma/concurrent/x/message"
+	"github.com/totegamma/concurrent/x/notification"
 	"github.com/totegamma/concurrent/x/policy"
 	"github.com/totegamma/concurrent/x/profile"
 	"github.com/totegamma/concurrent/x/schema"
@@ -130,7 +131,7 @@ func SetupAuthService(db *gorm.DB, rdb *redis.Client, mc *memcache.Client, clien
 	entityService := SetupEntityService(db, rdb, mc, client2, policy2, config)
 	domainService := SetupDomainService(db, client2, config)
 	keyService := SetupKeyService(db, rdb, mc, client2, config)
-	authService := auth.NewService(config, entityService, domainService, keyService, policy2)
+	authService := auth.NewService(rdb, config, entityService, domainService, keyService, policy2)
 	return authService
 }
 
@@ -173,6 +174,12 @@ func SetupSemanticidService(db *gorm.DB) core.SemanticIDService {
 	repository := semanticid.NewRepository(db)
 	semanticIDService := semanticid.NewService(repository)
 	return semanticIDService
+}
+
+func SetupNotificationService(db *gorm.DB) core.NotificationService {
+	repo := notification.NewRepository(db)
+	notificationService := notification.NewService(repo)
+	return notificationService
 }
 
 // wire.go:
@@ -226,3 +233,6 @@ var storeServiceProvider = wire.NewSet(store.NewService, store.NewRepository, Se
 	SetupSubscriptionService,
 	SetupSemanticidService,
 )
+
+// other
+var notificationServiceProvider = wire.NewSet(notification.NewService, notification.NewRepository)

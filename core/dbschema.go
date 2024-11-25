@@ -115,6 +115,7 @@ type Message struct {
 	PolicyID        uint           `json:"-"`
 	Policy          string         `json:"policy,omitempty" gorm:"-"`
 	PolicyParams    *string        `json:"policyParams,omitempty" gorm:"type:json"`
+	PolicyDefaults  *string        `json:"policyDefaults,omitempty" gorm:"type:json"`
 	Document        string         `json:"document" gorm:"type:json"`
 	Signature       string         `json:"signature" gorm:"type:char(130)"`
 	CDate           time.Time      `json:"cdate" gorm:"->;<-:create;type:timestamp with time zone;not null;default:clock_timestamp()"`
@@ -233,4 +234,14 @@ type CommitLog struct {
 	CommitOwners []CommitOwner `json:"commitOwners" gorm:"foreignKey:CommitLogID"`
 	Owners       []string      `json:"owners" gorm:"-"`
 	CDate        time.Time     `json:"cdate" gorm:"type:timestamp with time zone;not null;default:clock_timestamp()"`
+}
+
+type NotificationSubscription struct {
+	VendorID     string         `json:"vendorID" gorm:"primaryKey;type:text"`
+	Owner        string         `json:"owner" gorm:"primaryKey;type:text"`
+	Schemas      pq.StringArray `json:"schemas" gorm:"type:text[]"`
+	Timelines    pq.StringArray `json:"timelines" gorm:"type:text[]"`
+	Subscription string         `json:"subscription" gorm:"type:text"`
+	CDate        time.Time      `json:"cdate" gorm:"type:timestamp with time zone;not null;default:clock_timestamp()"`
+	MDate        time.Time      `json:"mdate" gorm:"autoUpdateTime"`
 }

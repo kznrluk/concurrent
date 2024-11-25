@@ -508,7 +508,7 @@ func (s *service) PostItem(ctx context.Context, timeline string, item core.Timel
 		span.RecordError(err)
 	}
 
-	writable := s.policy.Summerize([]core.PolicyEvalResult{result}, "timeline.distribute")
+	writable := s.policy.Summerize([]core.PolicyEvalResult{result}, "timeline.distribute", nil)
 
 	if !writable {
 		span.RecordError(fmt.Errorf("You don't have timeline.distribute access to %v", timelineID))
@@ -651,7 +651,7 @@ func (s *service) UpsertTimeline(ctx context.Context, mode core.CommitMode, docu
 			return core.Timeline{}, err
 		}
 
-		result := s.policy.Summerize([]core.PolicyEvalResult{policyResult}, "timeline.create")
+		result := s.policy.Summerize([]core.PolicyEvalResult{policyResult}, "timeline.create", nil)
 		if !result {
 			return core.Timeline{}, fmt.Errorf("You don't have timeline.create access")
 		}
@@ -699,7 +699,7 @@ func (s *service) UpsertTimeline(ctx context.Context, mode core.CommitMode, docu
 			span.RecordError(err)
 		}
 
-		result := s.policy.Summerize([]core.PolicyEvalResult{policyResult}, "timeline.update")
+		result := s.policy.Summerize([]core.PolicyEvalResult{policyResult}, "timeline.update", nil)
 		if !result {
 			return core.Timeline{}, fmt.Errorf("You don't have timeline.update access")
 		}
@@ -854,7 +854,7 @@ func (s *service) Retract(ctx context.Context, mode core.CommitMode, document, s
 		span.RecordError(err)
 	}
 
-	result := s.policy.Summerize([]core.PolicyEvalResult{policyResult}, "timeline.retract")
+	result := s.policy.Summerize([]core.PolicyEvalResult{policyResult}, "timeline.retract", nil)
 	if !result {
 		return core.TimelineItem{}, []string{}, fmt.Errorf("You don't have timeline.retract access")
 	}
@@ -910,7 +910,7 @@ func (s *service) DeleteTimeline(ctx context.Context, mode core.CommitMode, docu
 		return core.Timeline{}, err
 	}
 
-	result := s.policy.Summerize([]core.PolicyEvalResult{policyResult}, "timeline.delete")
+	result := s.policy.Summerize([]core.PolicyEvalResult{policyResult}, "timeline.delete", nil)
 	if !result {
 		return core.Timeline{}, errors.New("policy failed")
 	}
