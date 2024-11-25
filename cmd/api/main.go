@@ -194,10 +194,6 @@ func main() {
 		panic("failed to migrate schema: " + err.Error())
 	}
 
-	// migration from 1.3.2 to 1.3.3
-	db.Model(&core.Timeline{}).Where("owner IS NULL or domain_owned = true").Update("owner", gorm.Expr("CASE WHEN domain_owned THEN ? ELSE author END", conconf.CSID))
-	db.Model(&core.Subscription{}).Where("owner IS NULL or domain_owned = true").Update("owner", gorm.Expr("CASE WHEN domain_owned THEN ? ELSE author END", conconf.CSID))
-
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     config.Server.RedisAddr,
 		Password: "", // no password set
@@ -276,22 +272,6 @@ func main() {
 	notificationService := concurrent.SetupNotificationService(db)
 	notificationHandler := notification.NewHandler(notificationService)
 	notificationReactor := notification.NewReactor(notificationService, timelineService, webpushOpts)
-
-	// migration from 1.3.2 to 1.3.3
-	var remotes []core.Domain
-	db.Find(&remotes)
-	for _, remote := range remotes {
-		go func(remote core.Domain) {
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-			msg := "succeed"
-			_, err := domainService.ForceFetch(ctx, remote.ID)
-			if err != nil {
-				msg = err.Error()
-			}
-			fmt.Println("force fetch", remote.ID, msg)
-		}(remote)
-	}
 
 	apiV1 := e.Group("", auth.ReceiveGatewayAuthPropagation)
 	// store
