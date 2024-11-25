@@ -267,7 +267,7 @@ func main() {
 	jobReactor := job.NewReactor(storeService, jobService)
 
 	webpushOpts := webpush.Options{
-		Subscriber:      "mailto:webmaster@" + config.Concrnt.FQDN,
+		Subscriber:      "webmaster@" + config.Concrnt.FQDN,
 		VAPIDPublicKey:  config.Server.VapidPublicKey,
 		VAPIDPrivateKey: config.Server.VapidPrivateKey,
 		TTL:             60,
