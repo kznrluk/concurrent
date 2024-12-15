@@ -27,6 +27,7 @@ const (
 var tracer = otel.Tracer("client")
 
 type Client interface {
+	SetUserAgent(software, version string)
 	Commit(ctx context.Context, domain, body string, response any, opts *Options) (*http.Response, error)
 	GetEntity(ctx context.Context, domain, address string, opts *Options) (core.Entity, error)
 	GetMessage(ctx context.Context, domain, id string, opts *Options) (core.Message, error)
@@ -42,25 +43,38 @@ type Client interface {
 }
 
 type client struct {
-	client     http.Client
+	client     *http.Client
 	lastFailed map[string]time.Time
 	failCount  map[string]int
+	userAgent  string
 }
 
 func NewClient() Client {
-	httpClient := new(http.Client)
-	httpClient.Timeout = defaultTimeout
+	httpClient := http.Client{
+		Timeout: defaultTimeout,
+	}
 	client := &client{
-		client:     *httpClient,
+		client:     &httpClient,
 		lastFailed: make(map[string]time.Time),
 		failCount:  make(map[string]int),
 	}
+	httpClient.Transport = client
+
 	go client.UpKeeper()
 	return client
 }
 
 type Options struct {
 	AuthToken string
+}
+
+func (c *client) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Set("User-Agent", c.userAgent)
+	return http.DefaultTransport.RoundTrip(req)
+}
+
+func (c *client) SetUserAgent(software, version string) {
+	c.userAgent = fmt.Sprintf("%s/%s (Concrnt)", software, version)
 }
 
 func (c *client) IsOnline(domain string) bool {
@@ -90,7 +104,7 @@ func (c *client) UpKeeper() {
 			if time.Since(lastFailed) > time.Duration(span)*time.Second {
 				log.Printf("Domain %s is offline. Fail count: %d", domain, c.failCount[domain])
 				// health check
-				_, err := httpRequest[core.Domain](ctx, &c.client, "GET", "https://"+domain+"/api/v1/domain", "", &Options{})
+				_, err := httpRequest[core.Domain](ctx, c.client, "GET", "https://"+domain+"/api/v1/domain", "", &Options{})
 				if err != nil {
 					if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 						c.lastFailed[domain] = time.Now()
@@ -216,7 +230,7 @@ func (c *client) GetEntity(ctx context.Context, domain, address string, opts *Op
 	url := "https://" + domain + "/api/v1/entity/" + address
 	span.SetAttributes(attribute.String("url", url))
 
-	response, err := httpRequest[core.Entity](ctx, &c.client, "GET", url, "", opts)
+	response, err := httpRequest[core.Entity](ctx, c.client, "GET", url, "", opts)
 	if err != nil {
 		span.RecordError(err)
 
@@ -242,7 +256,7 @@ func (c *client) GetMessage(ctx context.Context, domain, id string, opts *Option
 	url := "https://" + domain + "/api/v1/message/" + id
 	span.SetAttributes(attribute.String("url", url))
 
-	response, err := httpRequest[core.Message](ctx, &c.client, "GET", url, "", opts)
+	response, err := httpRequest[core.Message](ctx, c.client, "GET", url, "", opts)
 	if err != nil {
 		span.RecordError(err)
 
@@ -267,7 +281,7 @@ func (c *client) GetAssociation(ctx context.Context, domain, id string, opts *Op
 	url := "https://" + domain + "/api/v1/association/" + id
 	span.SetAttributes(attribute.String("url", url))
 
-	response, err := httpRequest[core.Association](ctx, &c.client, "GET", url, "", opts)
+	response, err := httpRequest[core.Association](ctx, c.client, "GET", url, "", opts)
 	if err != nil {
 		span.RecordError(err)
 
@@ -292,7 +306,7 @@ func (c *client) GetProfile(ctx context.Context, domain, id string, opts *Option
 	url := "https://" + domain + "/api/v1/profile/" + id
 	span.SetAttributes(attribute.String("url", url))
 
-	response, err := httpRequest[core.Profile](ctx, &c.client, "GET", url, "", opts)
+	response, err := httpRequest[core.Profile](ctx, c.client, "GET", url, "", opts)
 	if err != nil {
 		span.RecordError(err)
 
@@ -317,7 +331,7 @@ func (c *client) GetTimeline(ctx context.Context, domain, id string, opts *Optio
 	url := "https://" + domain + "/api/v1/timeline/" + id
 	span.SetAttributes(attribute.String("url", url))
 
-	response, err := httpRequest[core.Timeline](ctx, &c.client, "GET", url, "", opts)
+	response, err := httpRequest[core.Timeline](ctx, c.client, "GET", url, "", opts)
 	if err != nil {
 		span.RecordError(err)
 
@@ -345,7 +359,7 @@ func (c *client) GetChunks(ctx context.Context, domain string, timelines []strin
 	url := "https://" + domain + "/api/v1/timelines/chunks?timelines=" + timelinesStr + "&time=" + timeStr
 	span.SetAttributes(attribute.String("url", url))
 
-	response, err := httpRequest[map[string]core.Chunk](ctx, &c.client, "GET", url, "", opts)
+	response, err := httpRequest[map[string]core.Chunk](ctx, c.client, "GET", url, "", opts)
 	if err != nil {
 		span.RecordError(err)
 
@@ -372,7 +386,7 @@ func (c *client) GetChunkItrs(ctx context.Context, domain string, timelines []st
 	url := "https://" + domain + "/api/v1/chunks/itr?timelines=" + timelinesStr + "&epoch=" + epoch
 	span.SetAttributes(attribute.String("url", url))
 
-	response, err := httpRequest[map[string]string](ctx, &c.client, "GET", url, "", opts)
+	response, err := httpRequest[map[string]string](ctx, c.client, "GET", url, "", opts)
 	if err != nil {
 		span.RecordError(err)
 
@@ -402,7 +416,7 @@ func (c *client) GetChunkBodies(ctx context.Context, domain string, query map[st
 	url := "https://" + domain + "/api/v1/chunks/body?query=" + strings.Join(queries, ",")
 	span.SetAttributes(attribute.String("url", url))
 
-	response, err := httpRequest[map[string]core.Chunk](ctx, &c.client, "GET", url, "", opts)
+	response, err := httpRequest[map[string]core.Chunk](ctx, c.client, "GET", url, "", opts)
 	if err != nil {
 		span.RecordError(err)
 
@@ -427,7 +441,7 @@ func (c *client) GetKey(ctx context.Context, domain, id string, opts *Options) (
 	url := "https://" + domain + "/api/v1/key/" + id
 	span.SetAttributes(attribute.String("url", url))
 
-	response, err := httpRequest[[]core.Key](ctx, &c.client, "GET", url, "", opts)
+	response, err := httpRequest[[]core.Key](ctx, c.client, "GET", url, "", opts)
 	if err != nil {
 		span.RecordError(err)
 
@@ -452,7 +466,7 @@ func (c *client) GetDomain(ctx context.Context, domain string, opts *Options) (c
 	url := "https://" + domain + "/api/v1/domain"
 	span.SetAttributes(attribute.String("url", url))
 
-	response, err := httpRequest[core.Domain](ctx, &c.client, "GET", url, "", opts)
+	response, err := httpRequest[core.Domain](ctx, c.client, "GET", url, "", opts)
 	if err != nil {
 		span.RecordError(err)
 
@@ -480,7 +494,7 @@ func (c *client) GetRetracted(ctx context.Context, domain string, timelines []st
 	url := "https://" + domain + "/api/v1/timelines/retracted?timelines=" + timelinesStr
 	span.SetAttributes(attribute.String("url", url))
 
-	response, err := httpRequest[map[string][]string](ctx, &c.client, "GET", url, "", opts)
+	response, err := httpRequest[map[string][]string](ctx, c.client, "GET", url, "", opts)
 	if err != nil {
 		span.RecordError(err)
 
