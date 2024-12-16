@@ -28,6 +28,7 @@ var tracer = otel.Tracer("client")
 
 type Client interface {
 	SetUserAgent(software, version string)
+	RegisterHostRemap(host string, remap string, useHttps bool)
 	Commit(ctx context.Context, domain, body string, response any, opts *Options) (*http.Response, error)
 	GetEntity(ctx context.Context, domain, address string, opts *Options) (core.Entity, error)
 	GetMessage(ctx context.Context, domain, id string, opts *Options) (core.Message, error)
@@ -42,11 +43,17 @@ type Client interface {
 	GetRetracted(ctx context.Context, domain string, timelines []string, opts *Options) (map[string][]string, error)
 }
 
+type remapRecord struct {
+	Remap    string
+	UseHttps bool
+}
+
 type client struct {
 	client     *http.Client
 	lastFailed map[string]time.Time
 	failCount  map[string]int
 	userAgent  string
+	hostRemap  map[string]remapRecord
 }
 
 func NewClient() Client {
@@ -59,7 +66,7 @@ func NewClient() Client {
 		failCount:  make(map[string]int),
 	}
 	httpClient.Transport = client
-
+	client.hostRemap = make(map[string]remapRecord)
 	go client.UpKeeper()
 	return client
 }
@@ -70,11 +77,30 @@ type Options struct {
 
 func (c *client) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("User-Agent", c.userAgent)
+
+	// remap host
+	if remap, ok := c.hostRemap[req.Host]; ok {
+		req.Host = remap.Remap
+		req.URL.Host = remap.Remap
+		if remap.UseHttps {
+			req.URL.Scheme = "https"
+		} else {
+			req.URL.Scheme = "http"
+		}
+	}
+
 	return http.DefaultTransport.RoundTrip(req)
 }
 
 func (c *client) SetUserAgent(software, version string) {
 	c.userAgent = fmt.Sprintf("%s/%s (Concrnt)", software, version)
+}
+
+func (c *client) RegisterHostRemap(host string, remap string, useHttps bool) {
+	c.hostRemap[host] = remapRecord{
+		Remap:    remap,
+		UseHttps: useHttps,
+	}
 }
 
 func (c *client) IsOnline(domain string) bool {
