@@ -6,7 +6,8 @@ server:
   memcachedAddr: "memcached:11211"
   traceEndpoint: "tempo:4318"
   enableTrace: false
-  repositoryPath: "/var/lib/concurrent"
+  # Google reCAPTCHA: https://www.google.com/recaptcha/about/
+  # use v2 checkbox type. here is example keys for testing.
   captchaSitekey: "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
   captchaSecret: "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe"
   # push notification key. you can generate with conctl command. `conctl gen vapid`
