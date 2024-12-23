@@ -180,9 +180,7 @@ func (c *client) Commit(ctx context.Context, domain, body string, response any, 
 
 	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 
-	client := new(http.Client)
-	client.Timeout = defaultTimeout
-	resp, err := client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		span.RecordError(err)
 
